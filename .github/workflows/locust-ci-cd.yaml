@@ -1,8 +1,9 @@
-name: Locust CI/CD
+name: Deploy Locust to GKE
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
 
 jobs:
   deploy-locust:
@@ -17,26 +18,16 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Authenticate to cluster
+      - name: Set up Kubeconfig
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
-          export KUBECONFIG=kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
 
       - name: Apply ConfigMap
-        run: kubectl apply -f configmap.yaml -n item-core-sbx
+        run: kubectl apply -f LoadTest_Sam.yaml -n item-core-sbx
 
-      - name: Deploy Locust Master
+      - name: Apply Locust Master
         run: kubectl apply -f master.yaml -n item-core-sbx
 
-      - name: Deploy Locust Workers
+      - name: Apply Locust Workers
         run: kubectl apply -f worker.yaml -n item-core-sbx
-
-      - name: Wait for Master Pod
-        run: |
-          kubectl rollout status deployment/perf-test-item-core-master -n item-core-sbx
-          sleep 10
-
-      - name: Trigger Locust Test (optional)
-        run: |
-          kubectl exec deploy/perf-test-item-core-master -n item-core-sbx -- \
-          locust --headless -f /mnt/locust/load_test.py -u 100 -r 10 --run-time 5m --host https://your-target.com
