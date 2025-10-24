@@ -1,3 +1,23 @@
+name: Deploy Locust to GKE
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy-locust:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
       - name: Set up Kubeconfig
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
@@ -12,3 +32,9 @@
 
       - name: Apply ConfigMap
         run: kubectl apply -f LoadTest_Sam.yaml -n item-core-sbx
+
+      - name: Apply Locust Master
+        run: kubectl apply -f master.yaml -n item-core-sbx
+
+      - name: Apply Locust Workers
+        run: kubectl apply -f worker.yaml -n item-core-sbx
