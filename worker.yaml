@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: perf-test-item-core-worker
+  namespace: item-core-sbx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: locust-worker
+  template:
+    metadata:
+      labels:
+        app: locust-worker
+    spec:
+      containers:
+        - name: locustio
+          image: locustio/locust:latest
+          args:
+            - -f
+            - /mnt/locust/load_test.py
+            - --worker
+            - --master-host
+            - perf-test-item-core-master
+          volumeMounts:
+            - name: locustfile-volume
+              mountPath: /mnt/locust
+      volumes:
+        - name: locustfile-volume
+          configMap:
+            name: locustfile-config

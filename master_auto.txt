@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: perf-test-item-core-master
+  namespace: item-core-sbx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust-master
+  template:
+    metadata:
+      labels:
+        app: locust-master
+    spec:
+      containers:
+        - name: locustio
+          image: locustio/locust:latest
+          args:
+            - -f
+            - /mnt/locust/load_test.py
+            - --master
+            - --autostart
+            - -u
+            - "100"
+            - -r
+            - "10"
+            - --run-time
+            - 5m
+          ports:
+            - containerPort: 8089
+            - containerPort: 5557
+          volumeMounts:
+            - name: locustfile-volume
+              mountPath: /mnt/locust
+      volumes:
+        - name: locustfile-volume
+          configMap:
+            name: locustfile-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: perf-test-item-core-master
+  namespace: item-core-sbx
+spec:
+  selector:
+    app: locust-master
+  ports:
+    - protocol: TCP
+      port: 5557
+      targetPort: 5557
